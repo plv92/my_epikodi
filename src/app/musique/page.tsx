@@ -27,6 +27,14 @@ export default function MusiquePage() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [deezerTracks, setDeezerTracks] = useState<DeezerTrack[]>([])
 
+  // Suppression d'un morceau
+  const handleDelete = async (id: number) => {
+    if (!confirm("Supprimer ce morceau ?")) return
+    const res = await fetch(`/api/tracks/${id}`, { method: "DELETE" })
+    if (res.ok) setTracks(tracks => tracks.filter(t => t.id !== id))
+    else alert("Erreur lors de la suppression")
+  }
+
   useEffect(() => {
     // Fetch local tracks
     fetch("/api/tracks")
@@ -58,7 +66,12 @@ export default function MusiquePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
             {tracks.map((track) => (
-              <TrackItem key={track.id} track={track} />
+              <TrackItem
+                key={track.id}
+                track={track}
+                onDelete={handleDelete}
+                onQueue={id => alert("À implémenter : ajout à la file d’attente")}
+              />
             ))}
           </div>
         )}

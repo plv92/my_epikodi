@@ -16,34 +16,54 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData()
-  const file = formData.get("file") as File
-  const title = formData.get("title") as string
-  const artist = formData.get("artist") as string
+  const file = formData.get("file") as File | null
+  let title = formData.get("title") as string
+  let artist = formData.get("artist") as string
   const album = formData.get("album") as string
+  const mediaUrl = formData.get("mediaUrl") as string | null
 
-  if (!file || !title || !artist) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+  let fileName = ""
+  let url = ""
+  let cover = null
+  let genre = null
+  let year = null
+
+  // Si fichier uploadé, on l'enregistre
+  if (file && file.size > 0) {
+    fileName = file.name.replace(/\s/g, "_")
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const filePath = path.join(process.cwd(), "public", "music", fileName)
+    await writeFile(filePath, buffer)
+    url = `/music/${fileName}`
   }
 
-  // Sauvegarde le fichier dans /public/music
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
-  const fileName = file.name.replace(/\s/g, "_")
-  const filePath = path.join(process.cwd(), "public", "music", fileName)
-  await writeFile(filePath, buffer)
+  // Si mediaUrl fourni, on utilise Noembed pour enrichir
+  if (mediaUrl) {
+    url = mediaUrl
+    const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(mediaUrl)}`)
+    if (res.ok) {
+      const noembedMeta = await res.json()
+      cover = noembedMeta.thumbnail_url || null
+      title = noembedMeta.title || title
+      artist = noembedMeta.author_name || artist
+    }
+  }
 
-  // Récupère les métadonnées avec gestion d’erreur
+  // Optionnel : enrichir avec AudioDb si info manquante
   let meta = null
   try {
     meta = await fetchAudioDbMetadata(artist, title)
+    genre = meta?.strGenre || null
+    year = meta?.intYearReleased || null
+    cover = cover || meta?.strTrackThumb || null
   } catch (e) {
-    // Log l’erreur mais continue
     console.error("Erreur fetchAudioDbMetadata:", e)
   }
 
-  const cover = meta?.strTrackThumb || null
-  const genre = meta?.strGenre || null
-  const year = meta?.intYearReleased || null
+  if (!url || !title || !artist) {
+    return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 })
+  }
 
   // Enregistre la piste en BDD avec les métadonnées
   const track = await prisma.track.create({
@@ -51,7 +71,7 @@ export async function POST(req: NextRequest) {
       title,
       artist,
       album,
-      url: `/music/${fileName}`,
+      url,
       cover,
       genre,
       year,
