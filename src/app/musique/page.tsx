@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import TrackItem from "@/components/TrackItem"
+import { useAudio } from "@/context/AudioContext"
+import AudioQueueHUD from "@/components/AudioQueueHUD"
 
 type Track = {
   id: number
@@ -26,6 +28,7 @@ type DeezerTrack = {
 export default function MusiquePage() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [deezerTracks, setDeezerTracks] = useState<DeezerTrack[]>([])
+  const { playTrack, addToQueue } = useAudio()
 
   // Suppression d'un morceau
   const handleDelete = async (id: number) => {
@@ -70,7 +73,11 @@ export default function MusiquePage() {
                 key={track.id}
                 track={track}
                 onDelete={handleDelete}
-                onQueue={id => alert("À implémenter : ajout à la file d’attente")}
+                onQueue={id => {
+                  const t = tracks.find(t => t.id === id)
+                  if (t) addToQueue(t)
+                }}
+                onPlay={track => playTrack(track)}
               />
             ))}
           </div>
@@ -104,6 +111,7 @@ export default function MusiquePage() {
           </div>
         )}
       </div>
+      <AudioQueueHUD />
     </div>
   )
 }
