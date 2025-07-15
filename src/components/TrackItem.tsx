@@ -1,26 +1,48 @@
 "use client"
-import { Track } from "@/data/tracks"
-import { useAudio } from "@/context/AudioContext"
 
-type Props = { track: Track }
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
-export default function TrackItem({ track }: Props) {
-  const { playTrack } = useAudio()
+type Track = {
+  id: number
+  title: string
+  artist: string
+  album?: string
+  url: string
+  createdAt: string
+}
+
+export default function TrackItem({ track }: { track: Track }) {
+  const [tracks, setTracks] = useState<Track[]>([])
+
+  useEffect(() => {
+    const fetchTracks = async () => {
+      const res = await fetch("/api/tracks")
+      const data = await res.json()
+      setTracks(data)
+    }
+    fetchTracks()
+  }, [])
 
   return (
-    <div className="p-4 bg-gray-800 rounded mb-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="text-lg font-semibold">{track.title}</div>
-          <div className="text-sm text-gray-400">{track.artist}</div>
-        </div>
-        <button
-          onClick={() => playTrack(track)}
-          className="px-4 py-2 bg-kodi-blue hover:bg-blue-700 rounded"
-        >
-          ▶️ Lire
-        </button>
+    <Link
+      href={`/musique/${track.id}`}
+      className="block cursor-pointer bg-gray-700 hover:bg-kodi-blue/80 transition rounded p-4 flex flex-col gap-1 shadow"
+      title="Voir le détail"
+    >
+      <div className="font-semibold text-lg">{track.title}</div>
+      <div className="text-sm text-gray-300">
+        {track.artist}
+        {track.album && (
+          <>
+            {" "}
+            —{" "}
+            <span className="italic" aria-hidden="true">
+              {track.album}
+            </span>
+          </>
+        )}
       </div>
-    </div>
+    </Link>
   )
 }
