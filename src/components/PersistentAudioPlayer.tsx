@@ -4,7 +4,7 @@ import { useAudio } from "@/context/AudioContext"
 import { useState, useEffect } from "react"
 
 export default function PersistentAudioPlayer() {
-  const { currentTrack, isPlaying, play, pause, seek, progress, duration } = useAudio()
+  const { currentTrack, isPlaying, play, pause, next, seek, progress, duration, volume, setVolume } = useAudio()
   const [seeking, setSeeking] = useState(false)
   const [seekValue, setSeekValue] = useState(0)
 
@@ -53,22 +53,50 @@ export default function PersistentAudioPlayer() {
       </div>
       {/* Contrôles */}
       <div className="flex items-center gap-2 ml-4">
-        <button onClick={pause} className="p-2 hover:bg-gray-700 rounded-full">
-          <svg width="20" height="20" fill="currentColor"><rect x="6" y="5" width="5" height="18"/><rect x="17" y="5" width="5" height="18"/></svg>
-        </button>
-        <button
-          onClick={isPlaying ? pause : play}
-          className="p-3 bg-kodi-blue hover:bg-blue-700 rounded-full text-white mx-1"
-        >
-          {isPlaying ? (
+        {/* Bouton précédent (optionnel) */}
+        {/* <button className="p-2 hover:bg-gray-700 rounded-full" disabled>
+          <svg width="20" height="20" fill="currentColor"><path d="M15 18V6l-8.5 6L15 18z"/></svg>
+        </button> */}
+        {/* Play/Pause */}
+        {isPlaying ? (
+          <button
+            onClick={pause}
+            className="p-3 bg-kodi-blue hover:bg-blue-700 rounded-full text-white mx-1"
+            title="Pause"
+          >
             <svg width="28" height="28" fill="currentColor"><rect x="6" y="5" width="5" height="18"/><rect x="17" y="5" width="5" height="18"/></svg>
-          ) : (
+          </button>
+        ) : (
+          <button
+            onClick={play}
+            className="p-3 bg-kodi-blue hover:bg-blue-700 rounded-full text-white mx-1"
+            title="Lecture"
+          >
             <svg width="28" height="28" fill="currentColor"><polygon points="5,3 25,14 5,25"/></svg>
-          )}
+          </button>
+        )}
+        {/* Next */}
+        <button
+          onClick={next}
+          className="p-2 hover:bg-gray-700 rounded-full"
+          title="Suivant"
+        >
+          <svg width="20" height="20" fill="currentColor"><path d="M5 6v12l8.5-6L5 6z"/></svg>
         </button>
-        <button onClick={play} className="p-2 hover:bg-gray-700 rounded-full">
-          <svg width="20" height="20" fill="currentColor"><polygon points="5,3 25,14 5,25"/></svg>
-        </button>
+      </div>
+      {/* Fader volume */}
+      <div className="flex items-center gap-2 ml-4">
+        <svg width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={volume}
+          onChange={e => setVolume(Number(e.target.value))}
+          className="accent-kodi-blue"
+          style={{ width: 80 }}
+        />
       </div>
     </div>
   )

@@ -13,56 +13,72 @@ export async function GET() {
   return NextResponse.json(tracks)
 }
 
-
 export async function POST(req: NextRequest) {
-  const formData = await req.formData()
-  const file = formData.get("file") as File | null
-  let title = formData.get("title") as string
-  let artist = formData.get("artist") as string
-  const album = formData.get("album") as string
-  const mediaUrl = formData.get("mediaUrl") as string | null
-
-  let fileName = ""
+  let title = ""
+  let artist = ""
+  let album = ""
   let url = ""
   let cover = null
   let genre = null
   let year = null
 
-  // Si fichier uploadé, on l'enregistre
-  if (file && file.size > 0) {
-    fileName = file.name.replace(/\s/g, "_")
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const filePath = path.join(process.cwd(), "public", "music", fileName)
-    await writeFile(filePath, buffer)
-    url = `/music/${fileName}`
-  }
+  // 1. Détecte le type de contenu
+  const contentType = req.headers.get("content-type") || ""
 
-  // Si mediaUrl fourni, on utilise Noembed pour enrichir
-  if (mediaUrl) {
-    url = mediaUrl
-    const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(mediaUrl)}`)
-    if (res.ok) {
-      const noembedMeta = await res.json()
-      cover = noembedMeta.thumbnail_url || null
-      title = noembedMeta.title || title
-      artist = noembedMeta.author_name || artist
+  if (contentType.includes("application/json")) {
+    // --- Cas Jamendo ou ajout externe ---
+    const data = await req.json()
+    title = data.title
+    artist = data.artist
+    album = data.album || ""
+    url = data.url
+    cover = data.cover || null
+    genre = data.genre || null
+    year = data.year || null
+  } else if (contentType.includes("multipart/form-data")) {
+    // --- Cas upload local ---
+    const formData = await req.formData()
+    const file = formData.get("file") as File | null
+    title = formData.get("title") as string
+    artist = formData.get("artist") as string
+    album = formData.get("album") as string
+
+    if (file && file.size > 0) {
+      const fileName = file.name.replace(/\s/g, "_")
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const filePath = path.join(process.cwd(), "public", "music", fileName)
+      await writeFile(filePath, buffer)
+      url = `/music/${fileName}`
     }
+    // Optionnel : cover, genre, year depuis le formData si tu veux
   }
 
   // Optionnel : enrichir avec AudioDb si info manquante
-  let meta = null
   try {
-    meta = await fetchAudioDbMetadata(artist, title)
-    genre = meta?.strGenre || null
-    year = meta?.intYearReleased || null
+    const meta = await fetchAudioDbMetadata(artist, title)
+    genre = genre || meta?.strGenre || null
+    year = year || meta?.intYearReleased || null
     cover = cover || meta?.strTrackThumb || null
   } catch (e) {
-    console.error("Erreur fetchAudioDbMetadata:", e)
+    // non bloquant
   }
 
   if (!url || !title || !artist) {
     return NextResponse.json({ error: "Champs obligatoires manquants" }, { status: 400 })
+  }
+
+  // Vérifie s'il existe déjà (par url ou par titre/artiste)
+  const existing = await prisma.track.findFirst({
+    where: {
+      OR: [
+        { url },
+        { AND: [{ title }, { artist }] }
+      ]
+    }
+  });
+  if (existing) {
+    return NextResponse.json({ error: "Ce morceau existe déjà." }, { status: 409 });
   }
 
   // Enregistre la piste en BDD avec les métadonnées
@@ -74,7 +90,7 @@ export async function POST(req: NextRequest) {
       url,
       cover,
       genre,
-      year,
+      year: year ? Number(year) : null,
     },
   })
 

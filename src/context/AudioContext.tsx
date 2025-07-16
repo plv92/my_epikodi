@@ -31,6 +31,8 @@ type AudioContextType = {
   addToQueue: (track: Track) => void;
   next: () => void;
   removeFromQueue: (index: number) => void;
+  volume: number;
+  setVolume: (v: number) => void;
 };
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -41,6 +43,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [queue, setQueue] = useState<Track[]>([]);
+  const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const playTrack = (track: Track) => {
@@ -68,7 +71,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   // Ajoute à la file d'attente
   const addToQueue = (track: Track) => {
-    setQueue((q) => [...q, track]);
+    setQueue(q => q.some(t => t.url === track.url) ? q : [...q, track]);
   };
 
   // Retire un morceau de la file d'attente
@@ -83,11 +86,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setCurrentTrack(nextTrack);
       setQueue(rest);
       setIsPlaying(true);
-      setTimeout(() => {
-        audioRef.current?.play();
-      }, 0);
+      // Ne pas appeler audioRef.current?.play() ici !
+      // On attend que l'audio soit prêt (voir plus bas)
     } else {
       setIsPlaying(false);
+      setCurrentTrack(null);
+      setQueue([]);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
   };
 
@@ -110,6 +118,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     };
   }, [queue, currentTrack]);
 
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
   return (
     <AudioContext.Provider
       value={{
@@ -125,6 +139,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         addToQueue,
         next,
         removeFromQueue,
+        volume,
+        setVolume,
       }}
     >
       {children}
@@ -134,6 +150,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         autoPlay={isPlaying}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onLoadedMetadata={() => {
+          // Si on veut jouer, on (re)lance play ici
+          if (isPlaying) {
+            audioRef.current?.play().catch(() => {});
+          }
+        }}
       />
     </AudioContext.Provider>
   );
