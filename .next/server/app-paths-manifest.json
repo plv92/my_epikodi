@@ -1,0 +1,15 @@
+{
+  "/api/favorites/route": "app/api/favorites/route.js",
+  "/api/stats/route": "app/api/stats/route.js",
+  "/api/tracks/route": "app/api/tracks/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
+  "/api/world-hits/route": "app/api/world-hits/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/favoris/page": "app/favoris/page.js",
+  "/films/page": "app/films/page.js",
+  "/musique/ajouter/page": "app/musique/ajouter/page.js",
+  "/musique/page": "app/musique/page.js",
+  "/page": "app/page.js",
+  "/series/page": "app/series/page.js",
+  "/stats/page": "app/stats/page.js"
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 60, "column": 0}, "map": {"version":3,"sources":["file:///home/plv92/Desktop/TEK3/Epikodi/src/app/api/world-hits/route.ts"],"sourcesContent":["import { NextResponse } from \"next/server\"\n\nconst JAMENDO_CLIENT_ID = \"b6fd5449\" // crée un compte gratuit sur Jamendo Developers\n\nexport async function GET() {\n  try {\n    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=10`\n    const res = await fetch(url)\n    const data = await res.json()\n    // On retourne uniquement les tracks pertinentes\n    return NextResponse.json(data.results || [])\n  } catch (e) {\n    return NextResponse.json([])\n  }\n}"],"names":[],"mappings":";;;AAAA;;AAEA,MAAM,oBAAoB,WAAW,gDAAgD;;AAE9E,eAAe;IACpB,IAAI;QACF,MAAM,MAAM,CAAC,+CAA+C,EAAE,kBAAkB,qBAAqB,CAAC;QACtG,MAAM,MAAM,MAAM,MAAM;QACxB,MAAM,OAAO,MAAM,IAAI,IAAI;QAC3B,gDAAgD;QAChD,OAAO,gIAAA,CAAA,eAAY,CAAC,IAAI,CAAC,KAAK,OAAO,IAAI,EAAE;IAC7C,EAAE,OAAO,GAAG;QACV,OAAO,gIAAA,CAAA,eAAY,CAAC,IAAI,CAAC,EAAE;IAC7B;AACF","debugId":null}}]
+}

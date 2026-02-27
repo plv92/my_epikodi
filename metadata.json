@@ -1,0 +1,4 @@
+{
+  "name": "Epikodi",
+  "description": "A high-performance media center inspired by Kodi and Plex. Features TMDB integration for movies/series, a local music player with playlists, and persistent settings. Built as a Client-Side SPA."
+}
